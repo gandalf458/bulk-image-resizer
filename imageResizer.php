@@ -3,7 +3,7 @@
  * A simple script to resize all jpeg and png images in a directory to a specified width 
  * or height. Requires the GD2 library.
  *
- * (c) Copyright 2014-15, Irwin Associates and Graham R Irwin - www.irwinassociates.eu
+ * (c) Copyright 2014-16, Irwin Associates and Graham R Irwin - www.irwinassociates.eu
  * Last updated 4 Apr 2016 - minor changes; released on github
  * 19 Apr 2015 - UI and support for png files added
  * 9 Jun 2015 - minor correction
