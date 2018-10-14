@@ -1,12 +1,14 @@
 <?php
 /*
  * A simple script to resize all jpeg and png images in a directory to a specified width 
- * or height. Requires the GD2 library.
+ * or height.
  *
- * (c) Copyright 2014-16, Irwin Associates and Graham R Irwin - www.irwinassociates.eu
- * Last updated 4 Apr 2016 - minor changes; released on github
+ * (c) Copyright 2014-18, Irwin Associates and Graham R Irwin - www.irwinassociates.eu
+ * Last updated:
+ * 14 Oct 2018 - rotate image if necessary
+ *  4 Apr 2016 - minor changes; released on github
+ *  9 Jun 2015 - minor correction
  * 19 Apr 2015 - UI and support for png files added
- * 9 Jun 2015 - minor correction
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this
  * software and associated documentation files (the "Software"), to deal in the Software
@@ -32,20 +34,20 @@
 <title>Irwin Associates image resizer</title>
 <style>
 body {
-	font: .83em Verdana, Arial, Helvetica, sans-serif;
-	max-width: 820px;
+	font: .83em sans-serif;
+	max-width: 60em;
 }
 ul {
-	padding-left: 18px;
+	padding-left: 1.5em;
 }
 label {
 	float: left;
-	width: 120px;
+	width: 8em;
 }
 input {
 	display: block;
 	font: inherit;
-	margin-bottom: 6px;
+	margin-bottom: .5em;
 }
 input[type="text"],
 input[type="number"] {
@@ -55,7 +57,7 @@ input[type="number"] {
 	background: #f0fdff;
 }
 input[type="number"] {
-	width: 60px;
+	width: 5em;
 }
 </style>
 </head>
@@ -86,17 +88,36 @@ function resizer($fileName, $maxWidth, $maxHeight, $fixedWidth, $fixedHeight, $o
     $newWidth  = $maxWidth;
     $newHeight = ($newWidth / $width) * $height;
 
-  } else {									// image is square
+  } else {								          	// image is square
     $newWidth  = $maxHeight;
     $newHeight = $maxHeight;
   }
 
   $extn = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-  $imageDest = imagecreatetruecolor($newWidth, $newHeight);
 
-  // jpeg
+  // it's a jpeg
   if ( $extn == 'jpg' or $extn == 'jpeg' ) {
-    $imageSrc  = imagecreatefromjpeg($file);
+    $imageSrc = imagecreatefromjpeg($file);
+    // rotate image if necessary
+    $exif = exif_read_data($file);
+    if ( isset($exif['Orientation']) ) {
+      switch ( $exif['Orientation'] ) {
+        case 3:
+          $imageSrc = imagerotate($imageSrc, 180, 0);
+          break;
+        case 6:
+          $imageSrc = imagerotate($imageSrc, -90, 0);
+          list($height, $width) = array($width, $height);
+          list($newHeight, $newWidth) = array($newWidth, $newHeight);
+          break;
+        case 8:
+          $imageSrc = imagerotate($imageSrc, 90, 0);
+          list($height, $width) = array($width, $height);
+          list($newHeight, $newWidth) = array($newWidth, $newHeight);
+          break;
+      }
+    }
+    $imageDest = imagecreatetruecolor($newWidth, $newHeight);
     if ( imagecopyresampled($imageDest, $imageSrc, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height) ) {
       imagejpeg($imageDest, $fileDest, $quality);
       imagedestroy($imageSrc);
@@ -106,11 +127,12 @@ function resizer($fileName, $maxWidth, $maxHeight, $fixedWidth, $fixedHeight, $o
     return false;
   }
 
-  // png
+  // it's a png
   if ( $extn == 'png' ) {
+    $imageSrc  = imagecreatefrompng($file);
+    $imageDest = imagecreatetruecolor($newWidth, $newHeight);
     imagealphablending($imageDest, false);
     imagesavealpha($imageDest, true);
-    $imageSrc = imagecreatefrompng($file);
     if ( imagecopyresampled($imageDest, $imageSrc, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height) ) {
       imagepng($imageDest, $fileDest, ($quality / 10) - 1);
       imagedestroy($imageSrc);
@@ -150,35 +172,31 @@ if ( $_SERVER['REQUEST_METHOD'] == 'POST' ) :
   if ( ( $filess = @scandir($oldDir) ) && count($filess) <= 2 )
     die('Source directory is empty.');
 
-  echo '<p>Settings: fixed width ', $fixedWidth, ', fixed height ', $fixedHeight, ', max width ', $maxWidth,
-    ', max height ', $maxHeight, ', quality ', $quality, '%</p>', "\n";
-  echo '<ul>', "\n";
+  echo '<p>Settings: fixed width ', $fixedWidth, ', fixed height ', $fixedHeight, ', max width ', $maxWidth, ', max height ', $maxHeight, ', quality ', $quality, '%</p>', PHP_EOL;
+  echo '<ul>', PHP_EOL;
 
   // process each file
   foreach ( $files as $key => $value ) {
     $ext = strtolower(pathinfo($key, PATHINFO_EXTENSION));
     if ( $ext == 'jpg' or $ext == 'jpeg' or $ext == 'png' ) {
       if ( resizer($key, $maxWidth, $maxHeight, $fixedWidth, $fixedHeight, $oldDir, $newDir, $quality) )
-        echo '<li>Resized image: ', $key, '</li>', "\n"; 
+        echo '<li>Resized image: ', $key, '</li>', PHP_EOL;
       else
-        echo '<li>** Failed to resize image: ', $key, ' **</li>', "\n";
+        echo '<li>** Failed to resize image: ', $key, ' **</li>', PHP_EOL;
     } else {
-      echo '<li>** ', $key, ' is not a jpeg or png **</li>', "\n";
+      echo '<li>** ', $key, ' is not a jpeg or png **</li>', PHP_EOL;
     }
   }
-  echo '</ul>', "\n";
+  echo '</ul>', PHP_EOL;
 
   closedir($folder);
-  echo '<p>*** Finished ***</p>', "\n";
-  echo '<p><a href="', htmlspecialchars($_SERVER['PHP_SELF']), '">Resize more</a></p>', "\n";
+  echo '<p>*** Finished ***</p>', PHP_EOL;
+  echo '<p><a href="', htmlspecialchars($_SERVER['PHP_SELF']), '">Resize more</a></p>', PHP_EOL;
 
 else :
 ?>
-<p>This script will resize all jpeg and png images in the source directory to a specified width or height. The source
-  and destination directories will usually be subdirectories of the directory containing the script. The destination
-  directory will be created if it doesn’t exist. You can specify the names of these directories as well as other
-  parameters:</p>
-<form id="form1" name="form1" method="post" action="<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>">
+<p>This script will resize all jpeg and png images in the source directory to a specified width or height. The source and destination directories will usually be subdirectories of the directory containing the script. The destination directory will be created if it doesn’t exist. You can specify the names of these directories as well as other parameters:</p>
+<form id="form1" name="form1" method="post">
   <label for="maxWidth">Max width</label>
   <input type="number" name="maxWidth" id="maxWidth" value="600">
   <label for="maxHeight">Max height</label>
