@@ -6,6 +6,7 @@
  * (c) Copyright 2014-19, Irwin Associates and Graham R Irwin - www.irwinassociates.eu
  *
  * Last updated:
+ * 16 Oct 2019 - minor code updates
  * 18 Jul 2019 - @ out exif_read_data + changes to calcSize()
  * 13 Nov 2018 - fixed a bug introduced with previous update; also converts saved file
  *               name to lowercase; some cosmetic changes and code improvements
@@ -34,8 +35,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
 <title>Irwin Associates image resizer</title>
+<meta charset="utf-8">
 <style>
 body {
   font: .91em/1.3 sans-serif;
@@ -189,26 +190,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') :
   if (count($files) <= 2)
     die('Source directory is empty.');
 
-  echo '<p>Settings: fixed width ', $fixedWidth, ', fixed height ', $fixedHeight, ', max width ', $maxWidth, ', max height ', $maxHeight, ', quality ', $quality, '%</p>', PHP_EOL;
-  echo '<ul>', PHP_EOL;
+  echo '<p>Settings: fixed width ', $fixedWidth, ', fixed height ', $fixedHeight, ', max width ', $maxWidth, ', max height ', $maxHeight, ', quality ', $quality, '%</p>', "\n";
+  echo '<ul>', "\n";
   // process each file
   foreach ($files as $file) {
     if ($file !== '.' && $file !== '..') {
       $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
       if ($ext === 'jpg' || $ext === 'jpeg' || $ext === 'png') {
         if (resizer($file, $maxWidth, $maxHeight, $fixedWidth, $fixedHeight, $oldDir, $newDir, $quality)) {
-          echo '<li>Resized image: ', $file, '</li>', PHP_EOL;
+          echo '<li>Resized image: ', $file, '</li>', "\n";
         } else {
-          echo '<li>** Failed to resize image: ', $file, ' **</li>', PHP_EOL;
+          echo '<li>** Failed to resize image: ', $file, ' **</li>', "\n";
         }
       } else {
-        echo '<li>** ', $file, ' is not a jpeg or png **</li>', PHP_EOL;
+        echo '<li>** ', $file, ' is not a jpeg or png **</li>', "\n";
       }
     }
   }
-  echo '</ul>', PHP_EOL;
-  echo '<p>*** Finished ***</p>', PHP_EOL;
-  echo '<p><a href="', htmlspecialchars($_SERVER['PHP_SELF']), '">Resize more</a></p>', PHP_EOL;
+  echo '</ul>', "\n";
+  echo '<p>*** Finished ***</p>', "\n";
+  echo '<p><a href="', htmlspecialchars($_SERVER['PHP_SELF']), '">Resize more</a></p>', "\n";
 
 else :
 ?>
@@ -246,7 +247,7 @@ else :
     <input type="submit" name="submit" id="submit" value="Resize">
   </div>
 </form>
-<p>Once you have pressed Resize please be patient as it may take some minutes to resize your images depending on how many there are.</p>
+<p>Once you have pressed Resize please be patient as it may take some while to resize your images depending on how many there are.</p>
 <?php
 endif;
 ?>
